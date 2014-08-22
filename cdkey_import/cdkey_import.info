@@ -1,0 +1,9 @@
+name = CDKey Import
+description = CDKey Import
+package = CDKey
+core = 7.x
+dependencies[] = cdkey
+
+version = 7.x-1.0-dev
+core = 7.x
+project = cdkey_import
