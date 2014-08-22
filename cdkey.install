@@ -1,0 +1,136 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function cdkey_schema() {
+  $schema = array();
+
+  $schema['cdkey_type'] = array(
+    'fields' => array(
+      'ctid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'translatable' => TRUE
+      ),
+      'config' => array(
+        'type' => 'text',
+        'size' => 'medium',
+      ),
+      'custom' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+      )
+    ),
+    'primary key' => array('ctid'),
+    'unique keys' => array(
+      'type' => array('type'),
+    )
+  );
+  $schema['cdkey_type']['fields'] += entity_exportable_schema_fields();
+
+  $schema['cdkey'] = array(
+    'fields' => array(
+      'cid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'sn' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE
+      ),
+      'keyt' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'num' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1
+      ),
+      'begin' => array(
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => 0
+      ),
+      'expire' => array(
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => 0
+      ),
+      'status' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'length' => 1,
+        'default' => 1
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'not null' => TRUE
+      ),
+      'created' => array(
+        'type' => 'int',
+        'not null' => TRUE
+      )
+    ),
+    'primary key' => array('cid'),
+    'unique keys' => array(
+      'name' => array('sn', 'keyt'),
+    ),
+  );
+  $schema['cdkey_used'] = array(
+    'fields' => array(
+      'cuid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'cid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'timestamp' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0
+      ),
+      'uid' => array(
+        'type' => 'int'
+      )
+    ),
+    'primary key' => array('cuid')
+  );
+  return $schema;
+}
+
+function cdkey_modules_installed($modules) {
+  
+}

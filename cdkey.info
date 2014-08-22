@@ -1,0 +1,12 @@
+name = CDKey
+description = CDKEY Module apply to activation key, register code, application number ......
+package = CDKey
+core = 7.x
+dependencies[] = entity
+dependencies[] = views
+files[] = cdkey.controller.inc
+configure = admin/structure/cdkey
+
+version = 7.x-1.0-dev
+core = 7.x
+project = cdkey

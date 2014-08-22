@@ -1,0 +1,530 @@
+<?php
+
+define('CDKEY_IS_USEBLE', 0);
+define('CDKEY_IS_USING', 1);
+define('CDKEY_IS_USED', 2);
+define('CDKEY_IS_DISABLE', 3);
+define('CDKEY_IS_UNEXISTS', 4);
+define('CDKEY_IS_NOTYET', 5);
+define('CDKEY_IS_EXPIRED', 6);
+
+/**
+ * Implements hook_menu().
+ */
+function cdkey_menu() {
+  $items = array();
+  $items['admin/cdkey'] = array(
+    'title' => 'CDKey',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cdkey_admin_page'),
+    'access arguments' => array('administer cdkey'),
+    'weight' => -10,
+    'file' => 'cdkey.admin.inc',
+  );
+  $items['admin/cdkey/list'] = array(
+    'title' => 'CDKey',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  // Base URI for dealing with entity.
+  $base_uri = 'admin/cdkey/%cdkey';
+  $base_uri_argument_position = 2;
+
+  // URI for choosing bundle of entity to add.
+  $items['admin/cdkey/add'] = array(
+    'title' => 'Add CDKey',
+    'page callback' => 'cdkey_choose_bundle',
+    'access arguments' => array('administer cdkey_entity content'),
+    'file' => 'cdkey.admin.inc',
+    'type' => MENU_LOCAL_ACTION,
+  );
+
+  // URI for adding entity of proper bundle.
+  foreach (cdkey_type_load_multiple() as $type => $info) {
+    $items['admin/cdkey/add/' . $type] = array(
+      'title' => 'Add CDKey',
+      'page callback' => 'cdkey_add',
+      'page arguments' => array(3),
+      'access arguments' => array('administer cdkey_entity content'),
+      'file' => 'cdkey.admin.inc',
+    );
+  }
+
+  // URI for viewing entity instances.
+  $items[$base_uri] = array(
+    'title callback' => 'entity_label',
+    'title arguments' => array('cdkey', $base_uri_argument_position),
+    'page callback' => 'cdkey_view',
+    'page arguments' => array($base_uri_argument_position),
+    'access arguments' => array('view cdkey_entity content'),
+    'file' => 'cdkey.pages.inc',
+  );
+  $items[$base_uri . '/view'] = array(
+    'title' => 'View CDKey',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  // URI for editing entity instances.
+  $items[$base_uri . '/edit'] = array(
+    'title' => 'Edit CDKey',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cdkey_form', $base_uri_argument_position),
+    'access arguments' => array('administer cdkey_entity content'),
+    'file' => 'cdkey.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+  );
+
+  // URI for deleting entity instances.
+  $items[$base_uri . '/delete'] = array(
+    'title callback' => 'cdkey_label',
+    'title arguments' => array($base_uri_argument_position),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cdkey_delete_form', $base_uri_argument_position),
+    'access arguments' => array('administer cdkey_entity content'),
+    'file' => 'cdkey.admin.inc',
+  );
+
+  // URI for deleting entity bundles.
+  $items['admin/structure/cdkey/%cdkey_type/delete'] = array(
+    'title' => 'Delete CDKey Type',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cdkey_type_form_delete_confirm', 4),
+    'access arguments' => array('administer cdkey_entity content'),
+    'weight' => 1,
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'cdkey.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function cdkey_theme() {
+  return array(
+    'cdkey' => array(
+      'render element' => 'elements',
+      'template' => 'cdkey',
+    ),
+    'cdkey_recent_block' => array(
+      'variables' => array('cdkeies' => NULL),
+    ),
+    'cdkey_recent_content' => array(
+      'variables' => array('cdkey' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implements hook_views_api().
+ */
+//function cdkey_views_api() {
+//    return array(
+//        'api' => 3,
+//        'path' => drupal_get_path('module', 'cdkey'),
+//    );
+//}
+
+function cdkey_entity_info() {
+  $info = array();
+  $info['cdkey_type'] = array(
+    'label' => t('CDKey Type'),
+    'base table' => 'cdkey_type',
+    'entity keys' => array(
+      'id' => 'ctid',
+      'name' => 'type',
+      'label' => 'label',
+    ),
+    'bundle of' => 'cdkey',
+    'entity class' => 'CDKeyType',
+    'controller class' => 'CDKeyTypeController',
+    'metadata controller class' => '',
+    'fieldable' => FALSE,
+    //'exportable' => TRUE,
+    'module' => 'cdkey',
+    'admin ui' => array(
+      'path' => 'admin/cdkey/type',
+      'file' => 'cdkey.admin.inc',
+      'controller class' => 'CDKeyTypeUiController',
+    ),
+    'access arguments' => array('administer cdkey type')
+  );
+  $info['cdkey'] = array(
+    'label' => t('CDKey'),
+    'base table' => 'cdkey',
+    'entity keys' => array(
+      'id' => 'cid',
+      'label' => 'sn',
+      'bundle' => 'type',
+    ),
+    'bundle keys' => array(
+      'bundle' => 'type',
+    ),
+    'bundles' => array(),
+    'entity class' => 'CDKey',
+    'controller class' => 'CDKeyController',
+    'metadata controller class' => '',
+    'fieldable' => TRUE,
+    'uri callback' => 'entity_class_uri',
+    'module' => 'cdkey',
+  );
+  $info['cdkey_used'] = array(
+    'label' => t('CDKey Used'),
+    'base table' => 'cdkey_used',
+    'entity keys' => array(
+      'id' => 'cuid',
+      'bundle' => 'type'
+    ),
+    'bundle keys' => array(
+      'bundle' => 'type',
+    ),
+    'bundles' => array(),
+    'entity class' => 'CDKeyUsed',
+    'controller class' => 'CDKeyUsedController',
+    'metadata controller class' => '',
+    'fieldable' => TRUE,
+    'uri callback' => 'entity_class_uri',
+    'module' => 'cdkey',
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ * 
+ * Specify admin pages for all existing entity bundles.
+ */
+function cdkey_entity_info_alter(&$entity_info) {
+  foreach (cdkey_type_get_names() as $type => $label) {
+    $entity_info['cdkey']['bundles'][$type] = array(
+      'label' => $label,
+      'admin' => array(
+        'path' => 'admin/structure/cdkey/manage/%cdkey_type',
+        'real path' => 'admin/structure/cdkey/manage/' . $type,
+        'bundle argument' => 4,
+      ),
+    );
+    $entity_info['cdkey_used']['bundles'][$type] = array(
+      'label' => $label,
+      'admin' => array(
+        'path' => 'admin',
+        'real path' => 'admin/structure',
+        'bundle argument' => 4
+      )
+    );
+  }
+}
+
+/**
+ * Implements hook_entity_property_info().
+ */
+function cdkey_entity_property_info() {
+  $info = array();
+  $info['cdkey_type'] = array(
+    'properties' => array(
+      'ctid' => array(
+        'type' => 'integer',
+        'schema field' => 'ctid',
+        'label' => t('CDKey Type ID'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'type' => array(
+        'type' => 'text',
+        'schema field' => 'type',
+        'required' => TRUE,
+        'label' => t('CDKey Type name'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'label' => array(
+        'type' => 'text',
+        'schema field' => 'label',
+        'required' => TRUE,
+        'label' => t('CDKey Type label'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'description' => array(
+        'type' => 'text',
+        'schema field' => 'description',
+        'label' => t('CDKey Type description'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'config' => array(
+        'type' => 'text',
+        'schema field' => 'description',
+        'label' => t('CDKey Type Config'),
+        'setter callback' => 'entity_property_verbatim_set',
+      )
+    )
+  );
+  $info['cdkey'] = array(
+    'properties' => array(
+      'id' => array(
+        'type' => 'text',
+        'schema field' => 'id',
+        'label' => t('CDKey ID'),
+        'description' => t('CDKey ID'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'sn' => array(
+        'type' => 'text',
+        'schema field' => 'sn',
+        'label' => t('CDKey SN'),
+        'description' => t('CDKey SN'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'keyt' => array(
+        'type' => 'text',
+        'schema field' => 'keyt',
+        'label' => t('CDKey Key'),
+        'description' => t('CDKey Key'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'type' => array(
+        'type' => 'text',
+        'schema field' => 'type',
+        'required' => TRUE,
+        'label' => t('CDKey Type (bundle)'),
+        'description' => t('CDKey Type (bundle)'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'num' => array(
+        'type' => 'integer',
+        'schema field' => 'num',
+        'required' => TRUE,
+        'label' => t('CDKey Num'),
+        'description' => t('CDKey Num'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'begin' => array(
+        'type' => 'integer',
+        'schema field' => 'begin',
+        'required' => TRUE,
+        'label' => t('CDKey Begin'),
+        'description' => t('CDKey Begin'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'expire' => array(
+        'type' => 'integer',
+        'schema field' => 'expire',
+        'required' => TRUE,
+        'label' => t('CDKey Expire'),
+        'description' => t('CDKey Expire'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'status' => array(
+        'type' => 'integer',
+        'schema field' => 'status',
+        'required' => TRUE,
+        'label' => t('CDKey Status'),
+        'description' => t('CDKey Status'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'uid' => array(
+        'type' => 'integer',
+        'schema field' => 'uid',
+        'required' => TRUE,
+        'label' => t('CDKey Create UserId'),
+        'description' => t('CDKey Create UserId'),
+        'setter callback' => 'entity_property_verbatim_set',
+      ),
+      'created' => array(
+        'type' => 'integer',
+        'schema field' => 'created',
+        'required' => TRUE,
+        'label' => t('CDKey Create Time'),
+        'description' => t('CDKey Create Time'),
+        'setter callback' => 'entity_property_verbatim_set',
+      )
+    )
+  );
+
+  return $info;
+}
+
+function cdkey_access($op) {
+  return user_access($op);
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cdkey_permission() {
+  $perms = array(
+    'administer cdkey type' => array(
+      'title' => t('Administer cdkey type'),
+      'restrict access' => TRUE,
+    ),
+    'administer cdkey' => array(
+      'title' => t('Administer cdkey'),
+      'restrict access' => TRUE,
+    ),
+    'administer cdkey used' => array(
+      'title' => t('Administer cdkey used'),
+      'restrict access' => TRUE,
+    )
+  );
+  return $perms;
+}
+
+function cdkey_load($cid, $keyt = FALSE) {
+  $conditions = empty($keyt) ? array() : array('keyt' => $keyt);
+  $entities = cdkey_load_multiple(array($cid), $conditions);
+  return reset($entities);
+}
+
+function cdkey_sn_load($sn, $keyt = FALSE) {
+  return cdkey_load_by_sn($sn, $keyt);
+}
+
+function cdkey_load_by_sn($sn, $keyt = FALSE) {
+  $conditions = array('sn' => $sn);
+  !empty($keyt) && $conditions += array('keyt' => $keyt);
+  $entities = cdkey_load_multiple(FALSE, $conditions);
+  return empty($entities) ? FALSE : reset($entities);
+}
+
+function cdkey_load_multiple($cids = array(), $conditions = array(), $reset = FALSE) {
+  if (empty($cids) && empty($conditions)) {
+    return FALSE;
+  }
+  return entity_load('cdkey', $cids, $conditions, $reset);
+}
+
+function cdkey_save($entity) {
+  $transaction = db_transaction();
+  $entity->uid = $GLOBALS['user']->uid;
+  $entity->created = REQUEST_TIME;
+  try {
+    module_invoke_all('cdkey_save', $entity);
+    entity_save('cdkey', $entity);
+  } catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('cdkey', $e);
+    throw $e;
+  }
+}
+
+function cdkey_delete($entity) {
+  $transaction = db_transaction();
+  try {
+    module_invoke_all('cdkey_delete', $entity);
+    entity_delete('cdkey', entity_id('cdkey', $entity));
+  } catch (Exception $e) {
+    $transaction->rollback();
+    watchdog_exception('cdkey', $e);
+    throw $e;
+  }
+}
+
+function cdkey_type_load($entity_type) {
+  return cdkey_type_load_multiple($entity_type);
+}
+
+function cdkey_type_get_names() {
+  $names = array();
+  $entities = cdkey_type_load_multiple();
+  foreach ($entities as $entity) {
+    $names[entity_id('cdkey_type', $entity)] = entity_label('cdkey_type', $entity);
+  }
+  return $names;
+}
+
+function cdkey_type_load_multiple($type_name = NULL) {
+  $types = entity_load_multiple_by_name('cdkey_type', isset($type_name) ? array($type_name) : FALSE);
+  return isset($type_name) ? reset($types) : $types;
+}
+
+function cdkey_type_save($entity_type) {
+  entity_save('cdkey_type', $entity_type);
+}
+
+function cdkey_type_delete($entity_type) {
+  entity_delete('cdkey_type', entity_id('cdkey_type', $entity_type));
+}
+
+/**
+ * Using CDKey
+ */
+function cdkey_using($cdkey, $uid = NULL) {
+  if ($uid === NULL) {
+    $user = $GLOBALS['user'];
+  } else {
+    $user = user_load($uid);
+  }
+  if (!$user) {
+    return FALSE;
+  }
+  if ($cdkey && cdkey_is_useble($cdkey, $uid)) {
+    module_invoke_all('cdkey_using', $cdkey, $user);
+    $flag = flag_get_flag('cdkey_used');
+    $isFlag = $flag->flag('flag', entity_id('cdkey', $cdkey), $user);
+    module_invoke_all('cdkey_used', $cdkey, $user);
+    return $isFlag;
+  }
+  return FALSE;
+}
+
+function cdkey_validate($cdkey, $keyt) {
+  module_invoke_all('cdkey_validate', $cdkey, $keyt);
+  return $cdkey->keyt == $keyt;
+}
+
+function cdkey_status($cdkey) {
+  if (!is_object($cdkey)) {
+    $cdkey = cdkey_load($cdkey);
+  }
+  if (empty($cdkey)) {
+    return CDKEY_IS_UNEXISTS;
+  }
+  $status = $cdkey->status;
+  if ($status !== CDKEY_IS_DISABLE && flag_get_flag('cdkey_used')->get_count(entity_id('cdkey', $cdkey)) >= $cdkey->num) {
+    $status = CDKEY_IS_USED;
+  }
+  drupal_alter('cdkey_status', $cdkey, $status);
+  return $status;
+}
+
+/**
+ * CDKey 是否可用
+ * 如传递 Uid，则表示该用户是否可用该 CDKey
+ * @return boolean
+ */
+function cdkey_is_useble($cdkey, $uid = NULL) {
+  if (cdkey_status($cdkey) !== CDKEY_IS_USEBLE) {
+    return FALSE;
+  } elseif (empty($uid)) {
+    return TRUE;
+  }
+  $flag = flag_get_flag('cdkey_used');
+  if ($flag->get_count(entity_id('cdkey', $cdkey)) >= $cdkey->num) {
+    return FALSE;
+  }
+  if ($flag->is_flagged(entity_id('cdkey', $cdkey), $uid)) {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
+ * CDKey 是否已被使用
+ * @return boolean
+ */
+function cdkey_is_used($cdkey, $uid = NULL) {
+  $status = cdkey_status($cdkey);
+  if (empty($uid)) {
+    if ($status === CDKEY_IS_USED) {
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+  } elseif ($status === CDKEY_IS_DISABLE || $status === CDKEY_IS_UNEXISTS) {
+    return FALSE;
+  } else {
+    $flag = flag_get_flag('cdkey_used');
+    return $flag->is_flagged(entity_id('cdkey', $cdkey), $uid);
+  }
+}
