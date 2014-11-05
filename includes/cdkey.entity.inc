@@ -1,53 +1,5 @@
 <?php
 
-class CDKeyType extends Entity {
-
-  public $type;
-  public $label;
-  public $weight = 0;
-
-  /**
-   * Overridden constructor.
-   */
-  public function __construct($values = array()) {
-    parent::__construct($values, 'cdkey_type');
-  }
-
-  /**
-   * Determine if the entity is locked.
-   */
-  public function isLocked() {
-    return isset($this->status) && empty($this->is_new) && (($this->status & ENTITY_IN_CODE) || ($this->status & ENTITY_FIXED));
-  }
-
-}
-
-class CDKeyTypeController extends EntityAPIControllerExportable {
-
-  /**
-   * Rebuild menu after editing entity bundles.
-   */
-  public function save($entity, DatabaseTransaction $transaction = NULL) {
-    parent::save($entity, $transaction);
-    // Rebuild menu registry.
-    variable_set('menu_rebuild_needed', TRUE);
-  }
-
-}
-
-class CDKeyTypeUiController extends EntityDefaultUIController {
-
-  /**
-   * Override hook_menu() defaults.
-   */
-  public function hook_menu() {
-    $items = parent::hook_menu();
-    $items[$this->path]['description'] = 'Manage CDKey Types.';
-    return $items;
-  }
-
-}
-
 class CDKey extends Entity {
 
   /**

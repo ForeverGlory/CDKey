@@ -105,7 +105,7 @@ function cdkey_schema() {
   );
   $schema['cdkey_used'] = array(
     'fields' => array(
-      'cuid' => array(
+      'id' => array(
         'type' => 'serial',
         'not null' => TRUE,
       ),
