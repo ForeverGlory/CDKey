@@ -5,19 +5,14 @@
  */
 function cdkey_schema() {
   $schema = array();
-
   $schema['cdkey_type'] = array(
     'fields' => array(
-      'ctid' => array(
-        'type' => 'serial',
-        'not null' => TRUE,
-      ),
       'type' => array(
         'type' => 'varchar',
         'length' => 32,
         'not null' => TRUE,
       ),
-      'label' => array(
+      'name' => array(
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
@@ -28,23 +23,15 @@ function cdkey_schema() {
         'size' => 'medium',
         'translatable' => TRUE
       ),
-      'config' => array(
-        'type' => 'text',
-        'size' => 'medium',
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
       ),
-      'custom' => array(
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'size' => 'tiny',
-      )
     ),
-    'primary key' => array('ctid'),
-    'unique keys' => array(
-      'type' => array('type'),
-    )
+    'primary key' => array('type')
   );
-  $schema['cdkey_type']['fields'] += entity_exportable_schema_fields();
 
   $schema['cdkey'] = array(
     'fields' => array(
@@ -60,7 +47,7 @@ function cdkey_schema() {
       'keyt' => array(
         'type' => 'varchar',
         'length' => 255,
-        'not null' => TRUE
+        'not null' => TRUE,
       ),
       'type' => array(
         'type' => 'varchar',
@@ -68,20 +55,12 @@ function cdkey_schema() {
         'not null' => TRUE,
         'default' => '',
       ),
-      'num' => array(
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 1
-      ),
-      'begin' => array(
-        'type' => 'int',
+      'rules' => array(
+        'type' => 'blob',
         'not null' => FALSE,
-        'default' => 0
-      ),
-      'expire' => array(
-        'type' => 'int',
-        'not null' => FALSE,
-        'default' => 0
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'CDKEY use rules, include useful life, limit, target'
       ),
       'status' => array(
         'type' => 'int',
@@ -89,14 +68,14 @@ function cdkey_schema() {
         'length' => 1,
         'default' => 1
       ),
+      'created' => array(
+        'type' => 'int',
+        'not null' => TRUE
+      ),
       'uid' => array(
         'type' => 'int',
         'not null' => TRUE
       ),
-      'created' => array(
-        'type' => 'int',
-        'not null' => TRUE
-      )
     ),
     'primary key' => array('cid'),
     'unique keys' => array(
@@ -126,7 +105,7 @@ function cdkey_schema() {
         'type' => 'int'
       )
     ),
-    'primary key' => array('cuid')
+    'primary key' => array('id')
   );
   return $schema;
 }
