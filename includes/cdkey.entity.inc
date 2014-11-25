@@ -1,6 +1,6 @@
 <?php
 
-class CDKey extends Entity {
+class CDKEY extends Entity {
 
   /**
    * Define the label of the entity.
@@ -18,7 +18,7 @@ class CDKey extends Entity {
 
 }
 
-class CDKeyController extends EntityAPIController {
+class CDKEYController extends EntityAPIController {
 
   /**
    * Build a structured array representing the entity's content.
@@ -47,7 +47,7 @@ class CDKeyController extends EntityAPIController {
 
 }
 
-class CDKeyUsed extends Entity {
+class CDKEYUsed extends Entity {
 
   /**
    * Define the label of the entity.
@@ -65,7 +65,7 @@ class CDKeyUsed extends Entity {
 
 }
 
-class CDKeyUsedController extends EntityAPIController {
+class CDKEYUsedController extends EntityAPIController {
 
   /**
    * Build a structured array representing the entity's content.
