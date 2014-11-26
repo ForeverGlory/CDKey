@@ -189,6 +189,17 @@ function cdkey_entity_info() {
     'uri callback' => 'entity_class_uri',
     'module' => 'cdkey',
   );
+  foreach (cdkey_type_get_names() as $type => $name) {
+    $info['cdkey']['bundles'][$type] = array(
+      'label' => $name,
+      'admin' => array(
+        'path' => 'admin/structure/cdkey/manage/%cdkey_type',
+        'real path' => 'admin/structure/cdkey/manage/' . str_replace('_', '-', $type),
+        'bundle argument' => 4,
+        'access arguments' => array('cdkey type administer'),
+      ),
+    );
+  }
   return $info;
 }
 
