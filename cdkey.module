@@ -3,6 +3,30 @@
 module_load_include('inc', 'cdkey');
 
 /**
+ * Implements hook_permission().
+ */
+function cdkey_permission() {
+  $perms = array(
+    'cdkey type administer' => array(
+      'title' => t('CDKEY type Administer'),
+      'restrict access' => TRUE,
+    ),
+    'cdkey administer' => array(
+      'title' => t('CDKEY Administer'),
+      'restrict access' => TRUE,
+    ),
+    'cdkey used administer' => array(
+      'title' => t('CDKEY used Administer'),
+      'restrict access' => TRUE,
+    ),
+    'cdkey use' => array(
+      'title' => t('use CDKEY')
+    )
+  );
+  return $perms;
+}
+
+/**
  * Implements hook_menu().
  */
 function cdkey_menu() {
@@ -11,7 +35,7 @@ function cdkey_menu() {
     'title' => 'CDKEY',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('cdkey_admin_page'),
-    'access arguments' => array('administer cdkey'),
+    'access arguments' => array('cdkey administer'),
     'file' => 'cdkey.admin.inc',
   );
   $items['admin/cdkey/list'] = array(
@@ -28,7 +52,7 @@ function cdkey_menu() {
   $items['admin/cdkey/add'] = array(
     'title' => 'Add CDKEY',
     'page callback' => 'cdkey_choose_bundle',
-    'access arguments' => array('administer cdkey_entity content'),
+    'access arguments' => array('cdkey administer'),
     'file' => 'cdkey.admin.inc',
     'type' => MENU_LOCAL_ACTION,
   );
@@ -39,7 +63,7 @@ function cdkey_menu() {
     'title arguments' => array('cdkey', $base_uri_argument_position),
     'page callback' => 'cdkey_view',
     'page arguments' => array($base_uri_argument_position),
-    'access arguments' => array('view cdkey_entity content'),
+    'access arguments' => array('cdkey administer'),
     'file' => 'cdkey.pages.inc',
   );
   $items[$base_uri . '/view'] = array(
@@ -53,7 +77,7 @@ function cdkey_menu() {
     'title' => 'Edit CDKEY',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('cdkey_form', $base_uri_argument_position),
-    'access arguments' => array('administer cdkey_entity content'),
+    'access arguments' => array('cdkey administer'),
     'file' => 'cdkey.admin.inc',
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
@@ -65,18 +89,51 @@ function cdkey_menu() {
     'title arguments' => array($base_uri_argument_position),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('cdkey_delete_form', $base_uri_argument_position),
-    'access arguments' => array('administer cdkey_entity content'),
+    'access arguments' => array('cdkey administer'),
     'file' => 'cdkey.admin.inc',
   );
 
-  // URI for deleting entity bundles.
-  $items['admin/structure/cdkey/%cdkey_type/delete'] = array(
-    'title' => 'Delete CDKEY Type',
+  $structure_path = 'admin/structure/cdkey';
+  $items[$structure_path] = array(
+    'title' => 'CDKEY types',
+    'description' => 'Manage CDKEY types',
+    'page callback' => 'cdkey_overview_types',
+    'access arguments' => array('cdkey type administer'),
+    'file' => 'cdkey.admin.inc',
+  );
+
+  $items[$structure_path . '/list'] = array(
+    'title' => 'List',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  $items[$structure_path . '/add'] = array(
+    'title' => 'Add CDKEY type',
     'page callback' => 'drupal_get_form',
+    'page arguments' => array('cdkey_type_form'),
+    'access arguments' => array('cdkey type administer'),
+    'type' => MENU_LOCAL_ACTION,
+    'file' => 'cdkey.admin.inc',
+  );
+
+  $items[$structure_path . '/manage/%cdkey_type'] = array(
+    'title' => 'Edit Inline Entity type',
+    'title callback' => 'inline_entity_type_page_title',
+    'title arguments' => array(4),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cdkey_type_form', 4),
+    'access arguments' => array('cdkey type administer'),
+    'file' => 'cdkey.admin.inc',
+  );
+  $items[$structure_path . '/manage/%cdkey_type/edit'] = array(
+    'title' => 'Edit',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items[$structure_path . '/manage/%cdkey_type/delete'] = array(
+    'title' => 'Delete',
     'page arguments' => array('cdkey_type_form_delete_confirm', 4),
-    'access arguments' => array('administer cdkey_entity content'),
-    'weight' => 1,
-    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('cdkey type administer'),
     'file' => 'cdkey.admin.inc',
   );
 
@@ -200,30 +257,6 @@ function cdkey_entity_property_info() {
   return $info;
 }
 
-/**
- * Implements hook_permission().
- */
-function cdkey_permission() {
-  $perms = array(
-    'administer cdkey type' => array(
-      'title' => t('Administer CDKEY type'),
-      'restrict access' => TRUE,
-    ),
-    'administer cdkey edit' => array(
-      'title' => t('Administer CDKEY'),
-      'restrict access' => TRUE,
-    ),
-    'administer cdkey view' => array(
-      'title' => t('Administer CDKEY'),
-    ),
-    'administer cdkey used' => array(
-      'title' => t('Administer CDKEY used'),
-      'restrict access' => TRUE,
-    )
-  );
-  return $perms;
-}
-
 function cdkey_load($cid, $reset = FALSE) {
   $entities = cdkey_load_multiple(array($cid), array(), $reset);
   return reset($entities);
@@ -273,6 +306,11 @@ function cdkey_delete($entity) {
     watchdog_exception('cdkey', $e);
     throw $e;
   }
+}
+
+function cdkey_type_load($type) {
+  $types = cdkey_type_get_types();
+  return $types[$type];
 }
 
 function cdkey_type_save($entity_type) {
