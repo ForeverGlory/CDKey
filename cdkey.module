@@ -31,11 +31,23 @@ function cdkey_permission() {
  */
 function cdkey_menu() {
   $items = array();
+  $items['cdkey/use/%cdkey_sn'] = array(
+    'title' => 'CDKEY use',
+    'title callback' => 'cdkey_title',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cdkey_use_form', 1),
+    'type' => MENU_CALLBACK,
+    'file' => 'cdkey.pages.inc'
+  );
+  $items['cdkey/type/%cdkey_type'] = array(
+    'title' => 'CDKEY type use'
+  );
   $items['admin/cdkey'] = array(
     'title' => 'CDKEY',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('cdkey_admin_page'),
     'access arguments' => array('cdkey administer'),
+    'weight' => -9,
     'file' => 'cdkey.admin.inc',
   );
   $items['admin/cdkey/list'] = array(
@@ -57,29 +69,14 @@ function cdkey_menu() {
     'type' => MENU_LOCAL_ACTION,
   );
 
-  // URI for viewing entity instances.
-  $items[$base_uri] = array(
-    'title callback' => 'entity_label',
-    'title arguments' => array('cdkey', $base_uri_argument_position),
-    'page callback' => 'cdkey_view',
-    'page arguments' => array($base_uri_argument_position),
-    'access arguments' => array('cdkey administer'),
-    'file' => 'cdkey.pages.inc',
-  );
-  $items[$base_uri . '/view'] = array(
-    'title' => 'View CDKEY',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => -10,
-  );
-
   // URI for editing entity instances.
-  $items[$base_uri . '/edit'] = array(
+  $items[$base_uri] = array(
     'title' => 'Edit CDKEY',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('cdkey_form', $base_uri_argument_position),
     'access arguments' => array('cdkey administer'),
     'file' => 'cdkey.admin.inc',
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_CALLBACK,
     'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
   );
 
@@ -91,6 +88,7 @@ function cdkey_menu() {
     'page arguments' => array('cdkey_delete_form', $base_uri_argument_position),
     'access arguments' => array('cdkey administer'),
     'file' => 'cdkey.admin.inc',
+    'type' => MENU_CALLBACK,
   );
 
   $structure_path = 'admin/structure/cdkey';
@@ -99,7 +97,7 @@ function cdkey_menu() {
     'description' => 'Manage CDKEY types',
     'page callback' => 'cdkey_overview_types',
     'access arguments' => array('cdkey type administer'),
-    'file' => 'cdkey.admin.inc',
+    'file' => 'cdkey.types.inc',
   );
 
   $items[$structure_path . '/list'] = array(
@@ -114,17 +112,17 @@ function cdkey_menu() {
     'page arguments' => array('cdkey_type_form'),
     'access arguments' => array('cdkey type administer'),
     'type' => MENU_LOCAL_ACTION,
-    'file' => 'cdkey.admin.inc',
+    'file' => 'cdkey.types.inc',
   );
 
   $items[$structure_path . '/manage/%cdkey_type'] = array(
-    'title' => 'Edit Inline Entity type',
+    'title' => 'Edit CDKEY type',
     'title callback' => 'inline_entity_type_page_title',
     'title arguments' => array(4),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('cdkey_type_form', 4),
     'access arguments' => array('cdkey type administer'),
-    'file' => 'cdkey.admin.inc',
+    'file' => 'cdkey.types.inc',
   );
   $items[$structure_path . '/manage/%cdkey_type/edit'] = array(
     'title' => 'Edit',
@@ -134,7 +132,7 @@ function cdkey_menu() {
     'title' => 'Delete',
     'page arguments' => array('cdkey_type_form_delete_confirm', 4),
     'access arguments' => array('cdkey type administer'),
-    'file' => 'cdkey.admin.inc',
+    'file' => 'cdkey.types.inc',
   );
 
   return $items;
@@ -198,6 +196,9 @@ function cdkey_entity_info() {
         'bundle argument' => 4,
         'access arguments' => array('cdkey type administer'),
       ),
+    );
+    $info['cdkey_used']['bundles'][$type] = array(
+      'label' => $name,
     );
   }
   return $info;
@@ -268,6 +269,26 @@ function cdkey_entity_property_info() {
   return $info;
 }
 
+/**
+ * Implements hook_theme().
+ */
+function cdkey_theme() {
+  return array(
+    'cdkey_admin_overview' => array(
+      'variables' => array('name' => NULL, 'type' => NULL),
+      'file' => 'cdkey.types.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function cdkey_block_info() {
+  $blocks = array();
+  return $blocks;
+}
+
 function cdkey_load($cid, $reset = FALSE) {
   $entities = cdkey_load_multiple(array($cid), array(), $reset);
   return reset($entities);
@@ -321,15 +342,27 @@ function cdkey_delete($entity) {
 
 function cdkey_type_load($type) {
   $types = cdkey_type_get_types();
-  return $types[$type];
+  $type = str_replace('-', '_', $type);
+  return isset($types[$type]) ? $types[$type] : FALSE;
 }
 
-function cdkey_type_save($entity_type) {
-  entity_save('cdkey_type', $entity_type);
+function cdkey_type_save($type) {
+  $is_existing = (bool) db_query_range('SELECT 1 FROM {cdkey_type} WHERE type = :type', 0, 1, array(':type' => $type->type))->fetchField();
+  if ($is_existing) {
+    drupal_write_record('cdkey_type', $type, 'type');
+    module_invoke_all('cdkey_type_update', $type);
+  } else {
+    drupal_write_record('cdkey_type', $type);
+    module_invoke_all('cdkey_type_insert', $type);
+  }
+  cdkey_type_cache_reset();
 }
 
-function cdkey_type_delete($entity_type) {
-  entity_delete('cdkey_type', entity_id('cdkey_type', $entity_type));
+function cdkey_type_delete($type) {
+  field_attach_delete_bundle('cdkey', $type->type);
+  db_delete('cdkey_type')->condition('type', $type->type)->execute();
+  module_invoke_all('cdkey_type_delete', $type);
+  cdkey_type_cache_reset();
 }
 
 function cdkey_type_get_names() {
@@ -337,11 +370,14 @@ function cdkey_type_get_names() {
 }
 
 function cdkey_type_get_types() {
-  return _cdkey_types_build()->types;
+  return _cdkey_types_build(true)->types;
 }
 
-function cdkey_type_set_defaults($info) {
-  return (array) $info;
+function cdkey_type_set_defaults($type) {
+  if (!is_array($type)) {
+    $type = (array) $type;
+  }
+  return (object) $type;
 }
 
 function _cdkey_types_build($rebuild = FALSE) {
@@ -356,32 +392,38 @@ function _cdkey_types_build($rebuild = FALSE) {
       return $types;
     }
   }
-  $types = array();
+  $types = (object) array('names' => array(), 'types' => array());
+  $types_hook = array();
   //定义 类型 hook
   foreach (module_implements('cdkey_info') as $module) {
     $info_array = module_invoke($module, 'cdkey_info');
     foreach ($info_array as $name => $type) {
-      $type['modified'] = FALSE;
-      $type['custom'] = FALSE;
-      $types[$name] = cdkey_type_set_defaults($type);
+      $type_hook = (array) cdkey_type_set_defaults($type);
+      $type_hook['custom'] = FALSE;
+      $type_hook['modified'] = FALSE;
+      $types_hook[$type_hook['type']] = $type_hook;
     }
   }
+  $types_db = array();
   $query = db_select('cdkey_type', 't')->fields('t')->orderBy('t.type', 'ASC');
   foreach ($query->execute() as $type_object) {
-    $type = cdkey_type_set_defaults($type_object);
-    if (isset($types[$type['type']])) {
-      $type['modified'] = TRUE;
-    }
-    $type['custom'] = TRUE;
-    $types[$type['type']] = $type;
+    $type_db = (array) cdkey_type_set_defaults($type_object);
+    $type_db['custom'] = !isset($types_hook[$type_db['type']]);
+    $type_db['modified'] = TRUE;
+    $types_db[$type_db['type']] = $type_db;
   }
-  drupal_alter('cdkey_info', $types);
-  asort($types);
-  $names = array();
-  foreach ($types as $name => $type) {
-    $names[$name] = $type['name'];
+  $types_tmp = array_merge($types_hook, $types_db);
+  asort($types_tmp);
+  drupal_alter('cdkey_info', $types_tmp);
+  foreach ($types_tmp as $name => $type) {
+    $types->names[$name] = $type['name'];
+    $types->types[$name] = cdkey_type_set_defaults($type);
   }
-  $caches = (object) array('names' => $names, 'types' => $types);
-  cache_set($cid, $caches);
-  return $caches;
+  cache_set($cid, $types);
+  return $types;
+}
+
+function cdkey_type_cache_reset() {
+  cache_clear_all('cdkey_types:', 'cache', TRUE);
+  drupal_static_reset('_cdkey_types_build');
 }

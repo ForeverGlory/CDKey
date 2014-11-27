@@ -9,9 +9,8 @@ function cdkey_overview_types() {
 
   foreach ($names as $key => $name) {
     $type = $types[$key];
-
     $type_url_str = str_replace('_', '-', $type->type);
-    $row = array(theme('node_admin_overview', array('name' => $name, 'type' => $type)));
+    $row = array(theme('cdkey_admin_overview', array('name' => $name, 'type' => $type)));
     // Set the edit column.
     $row[] = array('data' => l(t('edit'), 'admin/structure/cdkey/manage/' . $type_url_str));
 
@@ -35,7 +34,7 @@ function cdkey_overview_types() {
     '#theme' => 'table',
     '#header' => $header,
     '#rows' => $rows,
-    '#empty' => t('No inline entity types available. <a href="@link">Add inline entity type</a>.', array('@link' => url('admin/structure/cdkey/add'))),
+    '#empty' => t('No CDKEY types available. <a href="@link">Add CDKEY type</a>.', array('@link' => url('admin/structure/cdkey/add'))),
   );
 
   return $build;
@@ -125,9 +124,9 @@ function cdkey_type_form_delete(&$form, &$form_state) {
  */
 function cdkey_type_form_delete_confirm($form, &$form_state, $type) {
   $form_state['cdkey_type'] = $type;
-  $message = t('Are you sure you want to delete inline entity type %name?', array('%name' => $type->name));
+  $message = t('Are you sure you want to delete CDKEY type %name?', array('%name' => $type->name));
   return confirm_form(
-      $form, $message, 'admin/structure/cdkey/manage/' . $type->type, t('This action cannot be undone.'), t('Delete'), t('Cancel')
+          $form, $message, 'admin/structure/cdkey/manage/' . $type->type, t('This action cannot be undone.'), t('Delete'), t('Cancel')
   );
 }
 
@@ -141,4 +140,25 @@ function cdkey_type_form_delete_confirm_submit($form, &$form_state) {
   // Redirect user.
   drupal_set_message(t('@type %name has been deleted.', array('@type' => $type->type, '%name' => $type->name)));
   $form_state['redirect'] = 'admin/structure/cdkey';
+}
+
+/**
+ * Returns HTML for a node type description for the content type admin overview page.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - name: The human-readable name of the content type.
+ *   - type: An object containing the 'type' (machine name) and 'description' of
+ *     the content type.
+ *
+ * @ingroup themeable
+ */
+function theme_cdkey_admin_overview($variables) {
+  $name = $variables['name'];
+  $type = $variables['type'];
+
+  $output = check_plain($name);
+  $output .= ' <small>' . t('(Machine name: @type)', array('@type' => $type->type)) . '</small>';
+  $output .= '<div class="description">' . filter_xss_admin($type->description) . '</div>';
+  return $output;
 }
