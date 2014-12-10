@@ -34,7 +34,7 @@ function cdkey_overview_types() {
     '#theme' => 'table',
     '#header' => $header,
     '#rows' => $rows,
-    '#empty' => t('No CDKEY types available. <a href="@link">Add CDKEY type</a>.', array('@link' => url('admin/structure/cdkey/add'))),
+    '#empty' => t('No CDKey types available. <a href="@link">Add CDKey type</a>.', array('@link' => url('admin/structure/cdkey/add'))),
   );
 
   return $build;
@@ -68,8 +68,38 @@ function cdkey_type_form($form, &$form_state, $type = Null) {
     '#default_value' => $op == 'edit' ? $type->description : '',
     '#description' => t('Description about the entity type.'),
   );
+  $form['additional_settings'] = array(
+    '#type' => 'vertical_tabs',
+    '#weight' => 99,
+  );
 
-  $form['actions'] = array('#type' => 'actions');
+  $form['rules'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('CDKey use rules'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#group' => 'additional_settings',
+    'limit' => array(
+      '#type' => 'fieldset',
+      '#title' => t('CDKey limit number'),
+      'count' => array(
+        '#parents' => array('data', 'rules', 'limit', 'count'),
+        '#type' => 'textfield',
+        '#title' => 'CDKey using the count limit',
+        '#default_value' => isset($type->data['rules']['limit']['count']) ? $type->data['rules']['limit']['count'] : 1,
+        '#description' => t('The number of CDKey can be used. 0 is no limit.'),
+      ),
+      'user' => array(
+        '#parents' => array('data', 'rules', 'limit', 'count'),
+        '#type' => 'textfield',
+        '#title' => 'CDKey using the user limit',
+        '#default_value' => isset($type->data['rules']['limit']['user']) ? $type->data['rules']['limit']['user'] : 1,
+        '#description' => t('The number of the same user can use the CDKey.'),
+      )
+    ),
+  );
+
+  $form['actions'] = array('#type' => 'actions', '#weight' => 100);
   $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
@@ -96,7 +126,8 @@ function cdkey_type_form_submit($form, &$form_state) {
   $values = array(
     'type' => $form_state['values']['type'],
     'name' => $form_state['values']['name'],
-    'description' => $form_state['values']['description']
+    'description' => $form_state['values']['description'],
+    'data' => $form_state['values']['data']
   );
   $type = cdkey_type_set_defaults($values);
   cdkey_type_save($type);
@@ -124,7 +155,7 @@ function cdkey_type_form_delete(&$form, &$form_state) {
  */
 function cdkey_type_form_delete_confirm($form, &$form_state, $type) {
   $form_state['cdkey_type'] = $type;
-  $message = t('Are you sure you want to delete CDKEY type %name?', array('%name' => $type->name));
+  $message = t('Are you sure you want to delete CDKey type %name?', array('%name' => $type->name));
   return confirm_form(
           $form, $message, 'admin/structure/cdkey/manage/' . $type->type, t('This action cannot be undone.'), t('Delete'), t('Cancel')
   );

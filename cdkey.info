@@ -1,12 +1,19 @@
 name = CDKey
-description = CDKEY Module apply to activation key, register code, application number ......
+description = CDKey Module apply to activation key, register code, application number ......
 package = CDKey
 core = 7.x
 project = cdkey
 dependencies[] = entity
 dependencies[] = views
 
-files[] = includes/cdkey.entity.inc
+files[] = includes/entities/cdkey.entity.inc
+files[] = includes/entities/cdkey_type.entity.inc
+files[] = includes/entities/cdkey_use.entity.inc
+
+files[] = includes/views/handlers/cdkey_handler_field_cdkey.inc
+files[] = includes/views/handlers/cdkey_handler_field_cdkey_link.inc
+files[] = includes/views/handlers/cdkey_handler_field_cdkey_edit.inc
+files[] = includes/views/handlers/cdkey_handler_field_cdkey_delete.inc
 
 configure = admin/structure/cdkey
 

@@ -35,7 +35,7 @@ function cdkey_schema() {
 
   $schema['cdkey'] = array(
     'fields' => array(
-      'cid' => array(
+      'id' => array(
         'type' => 'serial',
         'not null' => TRUE,
       ),
@@ -44,7 +44,7 @@ function cdkey_schema() {
         'length' => 255,
         'not null' => FALSE
       ),
-      'keyt' => array(
+      'pass' => array(
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
@@ -60,7 +60,7 @@ function cdkey_schema() {
         'not null' => FALSE,
         'size' => 'big',
         'serialize' => TRUE,
-        'description' => 'CDKEY use rules, include useful life, limit, target'
+        'description' => 'CDKey use rules, include useful life, limit, target'
       ),
       'status' => array(
         'type' => 'int',
@@ -77,24 +77,36 @@ function cdkey_schema() {
         'not null' => TRUE
       ),
     ),
-    'primary key' => array('cid'),
+    'primary key' => array('id'),
     'unique keys' => array(
-      'name' => array('sn', 'keyt'),
+      'name' => array('sn', 'pass'),
     ),
   );
-  $schema['cdkey_used'] = array(
+  $schema['cdkey_use'] = array(
     'fields' => array(
       'id' => array(
         'type' => 'serial',
         'not null' => TRUE,
       ),
-      'cid' => array(
-        'type' => 'int',
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 32,
         'not null' => TRUE,
       ),
-      'timestamp' => array(
+      'sn' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'created' => array(
         'type' => 'int',
         'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
       ),
       'status' => array(
         'type' => 'int',

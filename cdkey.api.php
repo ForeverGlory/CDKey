@@ -9,6 +9,6 @@ function hook_cdkey_info() {
   );
 }
 
-function hook_cdkey_info_alter(&$types) {
+function hook_cdkey_info_alter(&$cdkey_types) {
   
 }
