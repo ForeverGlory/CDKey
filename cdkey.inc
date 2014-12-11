@@ -83,27 +83,6 @@ function cdkey_is_used($cdkey, $uid = NULL) {
   return cdkey_status($cdkey, $uid) == CDKEY_IS_USED;
 }
 
-/**
- * Using CDKey
- */
-function cdkey_using($cdkey, $uid = NULL) {
-  if (cdkey_is_useble($cdkey, $uid)) {
-    $account = $uid ? user_load($uid) : $GLOBALS['user'];
-    $cdkey_use = entity_create('cdkey_use', array(
-      'type' => $cdkey->type,
-      'sn' => $cdkey->sn,
-      'timestamp' => REQUEST_TIME,
-      'status' => CDKEY_IS_USED,
-      'uid' => $account->uid
-    ));
-    module_invoke_all('cdkey_using', $cdkey_use, $cdkey, $account);
-    entity_save('cdkey_use', $cdkey_use);
-    module_invoke_all('cdkey_used', $cdkey_use, $cdkey, $account);
-    return TRUE;
-  }
-  return FALSE;
-}
-
 function cdkey_use_create($cdkey, $uid = NULL) {
   $account = $uid ? user_load($uid) : $GLOBALS['user'];
   if (cdkey_use_count($cdkey, $account->uid, CDKEY_IS_USING)) {
@@ -118,8 +97,7 @@ function cdkey_use_create($cdkey, $uid = NULL) {
     $cdkey_use = entity_create('cdkey_use', array(
       'type' => $cdkey->type,
       'sn' => $cdkey->sn,
-      'created' => REQUEST_TIME,
-      'status' => CDKEY_IS_USING,
+      'status' => CDKEY_IS_USABLE,
       'uid' => $account->uid
     ));
   }

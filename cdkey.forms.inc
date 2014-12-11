@@ -57,7 +57,7 @@ function cdkey_use_form_submit($form, &$form_state) {
   $cdkey = $form_state['cdkey'];
   $cdkey_use = $form_state['cdkey_use'];
   entity_form_submit_build_entity('cdkey_use', $cdkey_use, $form, $form_state);
-  entity_save('cdkey_use', $cdkey_use);
+  cdkey_use_save($cdkey_use);
   $form_state['redirect'] = 'cdkey/confirm/' . $cdkey->sn;
 }
 
@@ -87,8 +87,6 @@ function cdkey_confirm_form_validate($form, &$form_state) {
 function cdkey_confirm_form_submit($form, &$form_state) {
   $cdkey = $form['#cdkey'];
   $cdkey_use = $form['#cdkey_use'];
-  $cdkey_use->status = CDKEY_IS_USED;
-  $cdkey_use->changed = REQUEST_TIME;
-  entity_save('cdkey_use', $cdkey_use);
+  cdkey_use_save($cdkey_use);
   $form_state['redirect'] = 'cdkey/' . $cdkey->sn;
 }

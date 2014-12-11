@@ -170,6 +170,9 @@ function cdkey_views_api() {
   );
 }
 
+/**
+ * Implements hook_entity_info().
+ */
 function cdkey_entity_info() {
   $info = array();
   $info['cdkey'] = array(
@@ -257,6 +260,15 @@ function cdkey_entity_info() {
     );
   }
   return $info;
+}
+
+/**
+ * Implements hook_entity_load().
+ */
+function cdkey_entity_load(&$entities, $entityType) {
+  if ($entityType == 'cdkey_use') {
+    
+  }
 }
 
 /**
@@ -398,6 +410,23 @@ function cdkey_delete($entity) {
     watchdog_exception('cdkey', $e);
     throw $e;
   }
+}
+
+function cdkey_use_save($cdkey_use) {
+  if (!empty($cdkey_use->is_new)) {
+    $cdkey_use->created = REQUEST_TIME;
+  }
+  $cdkey_use->changed = REQUEST_TIME;
+  if ($cdkey_use->status == CDKEY_IS_USABLE) {
+    $cdkey_use->status = CDKEY_IS_USING;
+    module_invoke_all('cdkey_using', $cdkey_use);
+    watchdog('cdkey use', t('cdkey %cdkey using.'), array('%cdkey' => $cdkey_use->sn));
+  } else {
+    $cdkey_use->status = CDKEY_IS_USED;
+    module_invoke_all('cdkey_used', $cdkey_use);
+    watchdog('cdkey use', t('cdkey %cdkey used.'), array('%cdkey' => $cdkey_use->sn));
+  }
+  return entity_save('cdkey_use', $cdkey_use);
 }
 
 function cdkey_type_load($type) {
